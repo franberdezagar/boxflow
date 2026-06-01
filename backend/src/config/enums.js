@@ -1,0 +1,32 @@
+export const ENUM_TURNO = {
+  MAÑANA: 'MAÑANA',
+  TARDE: 'TARDE',
+};
+
+export const ENUM_ESTADO_TURNO = {
+  ABIERTO: 'ABIERTO',
+  CERRADO: 'CERRADO',
+};
+
+export const ENUM_TIPO_MOVIMIENTO = {
+  INGRESO: 'INGRESO',
+  EGRESO: 'EGRESO',
+};
+
+export const ENUM_CATEGORIA = {
+  VENTA: 'VENTA',
+  PROVEEDOR: 'PROVEEDOR',
+  SUELDO: 'SUELDO',
+  VARIOS: 'VARIOS',
+};
+
+export const ENUM_CONDICION_FISCAL = {
+  BLANCO: 'BLANCO',
+  NEGRO: 'NEGRO',
+};
+
+export const ENUM_ROL = {
+  CAJERO: 'CAJERO',
+  GERENTE: 'GERENTE',
+  ADMIN: 'ADMIN',
+};
