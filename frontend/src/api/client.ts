@@ -1,11 +1,26 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || (() => {
-  // En producción (Vercel), usar el mismo dominio
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${window.location.origin}/api`;
+function resolveApiBaseUrl(): string {
+  const envUrl = import.meta.env.VITE_API_URL as string | undefined;
+
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+
+    // En producción (cualquier host que no sea local): usar SIEMPRE el mismo
+    // dominio. Ignoramos un VITE_API_URL que haya quedado "horneado" apuntando
+    // a localhost durante el build, que es la causa de ERR_CONNECTION_REFUSED.
+    if (!isLocalHost) {
+      const pointsToLocalhost =
+        !envUrl || envUrl.includes('localhost') || envUrl.includes('127.0.0.1');
+      return pointsToLocalhost ? `${window.location.origin}/api` : envUrl;
+    }
   }
-  // En desarrollo local, usar localhost
-  return 'http://localhost:3001/api';
-})();
+
+  // Desarrollo local
+  return envUrl || 'http://localhost:3001/api';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
+
 
 async function handle<T>(response: Response): Promise<T> {
   if (!response.ok) {
