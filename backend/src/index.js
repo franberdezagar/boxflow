@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
-import serverless from 'serverless-http';
 import sequelize from './config/database.js';
 import { initializeModels } from './models/index.js';
 import { TurnoService } from './services/TurnoService.js';
@@ -14,113 +13,126 @@ import { crearRutasReportes } from './routes/reportes.js';
 
 dotenv.config();
 
-const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
-app.use(helmet());
+/**
+ * Construye la aplicación Express completa (con DB, modelos, servicios y rutas).
+ * Se memoiza para reutilizar la misma instancia entre invocaciones serverless
+ * (Vercel mantiene el contenedor "caliente" entre requests).
+ */
+async function buildApp() {
+  const app = express();
 
-// Configurar CORS dinámicamente
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
-  'http://localhost:3003',
-  'http://localhost:3004',
-  'http://localhost:3005',
-];
+  // Seguridad
+  app.use(helmet());
 
-// En producción, agregar el dominio de Vercel
-if (process.env.VERCEL_URL) {
-  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+  // CORS: reflejar el origen de la request (el frontend y la API comparten dominio en Vercel)
+  app.use(
+    cors({
+      origin: true,
+      credentials: true,
+    })
+  );
+
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // Base de datos y modelos
+  await sequelize.authenticate();
+  console.log('✅ Conexión a la base de datos establecida');
+
+  const models = initializeModels(sequelize);
+  console.log('✅ Modelos inicializados');
+
+  await sequelize.sync({ alter: false });
+  console.log('✅ Base de datos sincronizada');
+
+  // Servicios
+  const turnoService = new TurnoService(models);
+  const movimientoService = new MovimientoService(models);
+  const reporteService = new ReporteService(models);
+
+  // Rutas API
+  app.use('/api/turnos', crearRutasTurnos(turnoService));
+  app.use('/api/movimientos', crearRutasMovimientos(movimientoService));
+  app.use('/api/reportes', crearRutasReportes(reporteService));
+
+  // Health check
+  app.get('/health', (req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  // Ruta raíz
+  app.get('/', (req, res) => {
+    res.json({
+      nombre: 'BoxFlow API',
+      version: '1.0.0',
+      descripcion: 'Sistema de gestión de tesorería y caja diaria',
+    });
+  });
+
+  // 404
+  app.use((req, res) => {
+    res.status(404).json({ error: 'Ruta no encontrada' });
+  });
+
+  // Manejo de errores global
+  app.use((err, req, res, next) => {
+    console.error(err);
+    res.status(500).json({
+      error: 'Error interno del servidor',
+      mensaje: err.message,
+    });
+  });
+
+  return app;
 }
 
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Memoización del build (lazy init, tanto en local como en serverless)
+let appPromise = null;
+function getApp() {
+  if (!appPromise) {
+    appPromise = buildApp().catch((error) => {
+      // Permitir reintentar el build en la siguiente request si falló (p. ej. DB caída)
+      appPromise = null;
+      throw error;
+    });
+  }
+  return appPromise;
+}
 
-// Inicializar base de datos y modelos
-let models;
-
-async function inicializarAplicacion() {
+// Handler compatible con Vercel (@vercel/node): recibe (req, res)
+export default async function handler(req, res) {
   try {
-    // Sincronizar base de datos
-    await sequelize.authenticate();
-    console.log('✅ Conexión a la base de datos establecida');
-
-    // Inicializar modelos
-    models = initializeModels(sequelize);
-    console.log('✅ Modelos inicializados');
-
-    // Sincronizar modelos con la BD
-    await sequelize.sync({ alter: false });
-    console.log('✅ Base de datos sincronizada');
-
-    // Instanciar servicios
-    const turnoService = new TurnoService(models);
-    const movimientoService = new MovimientoService(models);
-    const reporteService = new ReporteService(models);
-
-    // Rutas API
-    app.use('/api/turnos', crearRutasTurnos(turnoService));
-    app.use('/api/movimientos', crearRutasMovimientos(movimientoService));
-    app.use('/api/reportes', crearRutasReportes(reporteService));
-
-    // Health check
-    app.get('/health', (req, res) => {
-      res.status(200).json({
-        status: 'OK',
-        timestamp: new Date().toISOString(),
-      });
-    });
-
-    // Ruta raíz
-    app.get('/', (req, res) => {
-      res.json({
-        nombre: 'BoxFlow API',
-        version: '1.0.0',
-        descripcion: 'Sistema de gestión de tesorería y caja diaria',
-      });
-    });
-
-    // Manejo de errores 404
-    app.use((req, res) => {
-      res.status(404).json({
-        error: 'Ruta no encontrada',
-      });
-    });
-
-    // Manejo de errores global
-    app.use((err, req, res, next) => {
-      console.error(err);
-      res.status(500).json({
+    const app = await getApp();
+    return app(req, res);
+  } catch (error) {
+    console.error('❌ Error inicializando la aplicación:', error);
+    res.statusCode = 500;
+    res.setHeader('Content-Type', 'application/json');
+    res.end(
+      JSON.stringify({
         error: 'Error interno del servidor',
-        mensaje: err.message,
-      });
-    });
+        mensaje: error.message,
+      })
+    );
+  }
+}
 
-    // Iniciar servidor (solo en desarrollo local)
-    if (process.env.NODE_ENV !== 'production') {
+// Servidor local (desarrollo): levantar listen solo fuera de producción
+if (process.env.NODE_ENV !== 'production') {
+  getApp()
+    .then((app) => {
       app.listen(PORT, () => {
         console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
         console.log(`   http://localhost:${PORT}`);
       });
-    }
-  } catch (error) {
-    console.error('❌ Error inicializando la aplicación:', error);
-    if (process.env.NODE_ENV !== 'production') {
+    })
+    .catch((error) => {
+      console.error('❌ Error inicializando la aplicación:', error);
       process.exit(1);
-    }
-  }
+    });
 }
-
-// Inicializar en desarrollo local
-if (process.env.NODE_ENV !== 'production') {
-  inicializarAplicacion();
-}
-
-export default app;
-export const handler = serverless(app);

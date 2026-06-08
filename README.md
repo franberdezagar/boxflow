@@ -59,7 +59,46 @@ psql -U postgres -c "CREATE DATABASE boxflow_db;"
 
 El servidor estará en `http://localhost:3001`
 
+## ☁️ Despliegue en Vercel
+
+El proyecto es un **monorepo** que se despliega como una sola app en Vercel:
+el **frontend** (Vite/React) como sitio estático y el **backend** (Express)
+como **función serverless** en `/api`.
+
+### Configuración del proyecto en Vercel
+
+El archivo `vercel.json` ya deja todo configurado. En el panel de Vercel
+(Settings → Build and Deployment) asegurate de tener:
+
+- **Root Directory**: `./` (la raíz del repo, **no** `frontend`)
+- **Framework Preset**: `Other` (o dejá que `vercel.json` lo controle)
+- **Build / Output / Install Command**: dejá los **Override desactivados**;
+  se toman desde `vercel.json`:
+  - Build: `npm install --prefix frontend && npm run build --prefix frontend`
+  - Output: `frontend/dist`
+  - Install: `npm install` (instala las deps del backend en la raíz para la función `/api`)
+
+> ⚠️ La causa de que "no anduvieran los botones ni la DB" era que Vercel solo
+> compilaba el frontend y el backend nunca se desplegaba como API. Ahora la
+> función `api/index.js` expone el Express completo bajo `/api/*`.
+
+### Variables de entorno (Settings → Environment Variables)
+
+| Variable | Valor | Notas |
+|----------|-------|-------|
+| `NODE_ENV` | `production` | |
+| `DATABASE_URL` | `postgres://...` (cadena de Supabase/Postgres) | **Requerida** para que conecte la DB |
+
+- **No** definas `VITE_API_URL` en producción: el frontend usa el mismo dominio.
+- Tras cambiar variables, hacé **Redeploy**.
+
+### Endpoints en producción
+
+- App: `https://<tu-deploy>.vercel.app`
+- API: `https://<tu-deploy>.vercel.app/api/...` (ej: `/api/turnos/activo`, `/health`)
+
 ## 📚 Documentación
+
 
 - [Backend API Documentation](./backend/README.md) - Endpoints, modelos, ejemplos de uso
 - [Database Schema](./backend/migrations/) - Scripts SQL
@@ -161,20 +200,3 @@ Ver [Backend README](./backend/README.md) para detalles completos.
 - Helmet para headers de seguridad
 - Input sanitización
 
-## 📝 Ejemplo de Uso Completo
-
-Ver [examples.md](./docs/examples.md) para casos de uso detallados.
-
-## 🤝 Contribución
-
-Este proyecto está en desarrollo inicial. Las contribuciones son bienvenidas.
-
-## 📄 Licencia
-
-ISC
-
----
-
-**Desarrollado por Fran Berdez**  
-Buenos Aires, Argentina  
-2026
