@@ -5,19 +5,15 @@ export class TurnoController {
 
   async abrirTurno(req, res) {
     try {
-      const { nombre_turno, efectivo_inicial_blanco, efectivo_inicial_negro } = req.body;
+      const { nombre_turno } = req.body;
 
-      if (!nombre_turno || efectivo_inicial_blanco === undefined || efectivo_inicial_negro === undefined) {
+      if (!nombre_turno) {
         return res.status(400).json({
           error: 'Faltan campos requeridos',
         });
       }
 
-      const nuevoTurno = await this.turnoService.abrirTurno(
-        nombre_turno,
-        efectivo_inicial_blanco,
-        efectivo_inicial_negro
-      );
+      const nuevoTurno = await this.turnoService.abrirTurno(nombre_turno);
 
       res.status(201).json({
         mensaje: 'Turno abierto correctamente',

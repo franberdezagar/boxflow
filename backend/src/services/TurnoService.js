@@ -14,7 +14,7 @@ export class TurnoService {
     });
   }
 
-  async abrirTurno(nombre_turno, efectivo_inicial_blanco, efectivo_inicial_negro) {
+  async abrirTurno(nombre_turno) {
     // Verificar que no haya un turno abierto
     const turnoAbierto = await this.obtenerTurnoActivo();
     if (turnoAbierto) {
@@ -23,8 +23,8 @@ export class TurnoService {
 
     const nuevoTurno = await this.Turno.create({
       nombre_turno,
-      efectivo_inicial_blanco,
-      efectivo_inicial_negro,
+      efectivo_inicial_blanco: 0,
+      efectivo_inicial_negro: 0,
       estado: ENUM_ESTADO_TURNO.ABIERTO,
       fecha_apertura: new Date(),
     });
