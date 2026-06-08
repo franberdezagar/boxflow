@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import serverless from 'serverless-http';
 import sequelize from './config/database.js';
 import { initializeModels } from './models/index.js';
 import { TurnoService } from './services/TurnoService.js';
@@ -18,15 +19,24 @@ const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(helmet());
+
+// Configurar CORS dinámicamente
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'http://localhost:3003',
+  'http://localhost:3004',
+  'http://localhost:3005',
+];
+
+// En producción, agregar el dominio de Vercel
+if (process.env.VERCEL_URL) {
+  allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+}
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:3003',
-    'http://localhost:3004',
-    'http://localhost:3005',
-  ],
+  origin: allowedOrigins,
   credentials: true,
 }));
 app.use(express.json());
@@ -92,17 +102,25 @@ async function inicializarAplicacion() {
       });
     });
 
-    // Iniciar servidor
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
-      console.log(`   http://localhost:${PORT}`);
-    });
+    // Iniciar servidor (solo en desarrollo local)
+    if (process.env.NODE_ENV !== 'production') {
+      app.listen(PORT, () => {
+        console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+        console.log(`   http://localhost:${PORT}`);
+      });
+    }
   } catch (error) {
     console.error('❌ Error inicializando la aplicación:', error);
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'production') {
+      process.exit(1);
+    }
   }
 }
 
-inicializarAplicacion();
+// Inicializar en desarrollo local
+if (process.env.NODE_ENV !== 'production') {
+  inicializarAplicacion();
+}
 
 export default app;
+export const handler = serverless(app);

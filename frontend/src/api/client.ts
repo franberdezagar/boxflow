@@ -1,4 +1,11 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (() => {
+  // En producción (Vercel), usar rutas relativas
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return '/api';
+  }
+  // En desarrollo local, usar localhost
+  return 'http://localhost:3001/api';
+})();
 
 async function handle<T>(response: Response): Promise<T> {
   if (!response.ok) {
