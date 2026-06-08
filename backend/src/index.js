@@ -14,125 +14,144 @@ import { crearRutasReportes } from './routes/reportes.js';
 dotenv.config();
 
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
-/**
- * Construye la aplicación Express completa (con DB, modelos, servicios y rutas).
- * Se memoiza para reutilizar la misma instancia entre invocaciones serverless
- * (Vercel mantiene el contenedor "caliente" entre requests).
- */
-async function buildApp() {
-  const app = express();
+// ---------------------------------------------------------------------------
+// Inicialización perezosa de la base de datos (apta para serverless / pooler).
+// Se ejecuta una sola vez por contenedor "caliente" y se memoiza.
+// ---------------------------------------------------------------------------
+let dbReady = null;
 
-  // Seguridad
-  app.use(helmet());
+async function ensureDatabase() {
+  if (!dbReady) {
+    dbReady = (async () => {
+      await sequelize.authenticate();
+      console.log('✅ Conexión a la base de datos establecida');
 
-  // CORS: reflejar el origen de la request (el frontend y la API comparten dominio en Vercel)
-  app.use(
-    cors({
-      origin: true,
-      credentials: true,
-    })
-  );
+      const models = initializeModels(sequelize);
+      console.log('✅ Modelos inicializados');
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+      // Sincronizar el esquema solo si se pide explícitamente.
+      // Con el Transaction Pooler de Supabase, correr sync() en cada cold start
+      // puede fallar o ser lento. Hacé la migración una vez con DB_SYNC=true.
+      if (process.env.DB_SYNC === 'true') {
+        await sequelize.sync({ alter: false });
+        console.log('✅ Base de datos sincronizada (sync)');
+      }
 
-  // Base de datos y modelos
-  await sequelize.authenticate();
-  console.log('✅ Conexión a la base de datos establecida');
-
-  const models = initializeModels(sequelize);
-  console.log('✅ Modelos inicializados');
-
-  await sequelize.sync({ alter: false });
-  console.log('✅ Base de datos sincronizada');
-
-  // Servicios
-  const turnoService = new TurnoService(models);
-  const movimientoService = new MovimientoService(models);
-  const reporteService = new ReporteService(models);
-
-  // Rutas API
-  app.use('/api/turnos', crearRutasTurnos(turnoService));
-  app.use('/api/movimientos', crearRutasMovimientos(movimientoService));
-  app.use('/api/reportes', crearRutasReportes(reporteService));
-
-  // Health check
-  app.get('/health', (req, res) => {
-    res.status(200).json({
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-    });
-  });
-
-  // Ruta raíz
-  app.get('/', (req, res) => {
-    res.json({
-      nombre: 'BoxFlow API',
-      version: '1.0.0',
-      descripcion: 'Sistema de gestión de tesorería y caja diaria',
-    });
-  });
-
-  // 404
-  app.use((req, res) => {
-    res.status(404).json({ error: 'Ruta no encontrada' });
-  });
-
-  // Manejo de errores global
-  app.use((err, req, res, next) => {
-    console.error(err);
-    res.status(500).json({
-      error: 'Error interno del servidor',
-      mensaje: err.message,
-    });
-  });
-
-  return app;
-}
-
-// Memoización del build (lazy init, tanto en local como en serverless)
-let appPromise = null;
-function getApp() {
-  if (!appPromise) {
-    appPromise = buildApp().catch((error) => {
-      // Permitir reintentar el build en la siguiente request si falló (p. ej. DB caída)
-      appPromise = null;
+      return {
+        models,
+        turnoService: new TurnoService(models),
+        movimientoService: new MovimientoService(models),
+        reporteService: new ReporteService(models),
+      };
+    })().catch((error) => {
+      // Permitir reintentar en la siguiente request si falló (DB caída, etc.)
+      dbReady = null;
       throw error;
     });
   }
-  return appPromise;
+  return dbReady;
 }
 
-// Handler compatible con Vercel (@vercel/node): recibe (req, res)
-export default async function handler(req, res) {
+// ---------------------------------------------------------------------------
+// App Express (rutas montadas de forma síncrona; la DB se resuelve por request)
+// ---------------------------------------------------------------------------
+const app = express();
+
+app.use(helmet());
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health check (no toca la DB)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Endpoint de diagnóstico: prueba la conexión y reporta el error REAL.
+app.get('/api/debug/db', async (req, res) => {
   try {
-    const app = await getApp();
-    return app(req, res);
+    await sequelize.authenticate();
+    res.status(200).json({
+      ok: true,
+      mensaje: 'Conexión a la base de datos OK',
+      hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+      nodeEnv: process.env.NODE_ENV || null,
+    });
   } catch (error) {
-    console.error('❌ Error inicializando la aplicación:', error);
-    res.statusCode = 500;
-    res.setHeader('Content-Type', 'application/json');
-    res.end(
-      JSON.stringify({
-        error: 'Error interno del servidor',
-        mensaje: error.message,
-      })
-    );
+    res.status(500).json({
+      ok: false,
+      mensaje: 'No se pudo conectar a la base de datos',
+      error: error.message,
+      name: error.name,
+      hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+      nodeEnv: process.env.NODE_ENV || null,
+    });
   }
+});
+
+// Ruta raíz informativa
+app.get('/', (req, res) => {
+  res.json({
+    nombre: 'BoxFlow API',
+    version: '1.0.0',
+    descripcion: 'Sistema de gestión de tesorería y caja diaria',
+  });
+});
+app.get('/api', (req, res) => {
+  res.json({ nombre: 'BoxFlow API', version: '1.0.0' });
+});
+
+// Middleware: garantizar la DB antes de las rutas que la necesitan.
+// Inyecta los servicios ya construidos en req.services.
+app.use('/api', async (req, res, next) => {
+  try {
+    req.services = await ensureDatabase();
+    next();
+  } catch (error) {
+    console.error('❌ Error de base de datos:', error);
+    res.status(500).json({
+      error: 'No se pudo conectar a la base de datos',
+      mensaje: error.message,
+    });
+  }
+});
+
+// Rutas API. Los routers reciben un getter que toma el servicio desde req.
+app.use('/api/turnos', crearRutasTurnos((req) => req.services.turnoService));
+app.use('/api/movimientos', crearRutasMovimientos((req) => req.services.movimientoService));
+app.use('/api/reportes', crearRutasReportes((req) => req.services.reporteService));
+
+// 404
+app.use((req, res) => {
+  res.status(404).json({ error: 'Ruta no encontrada' });
+});
+
+// Manejo de errores global
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, next) => {
+  console.error(err);
+  res.status(500).json({
+    error: 'Error interno del servidor',
+    mensaje: err.message,
+  });
+});
+
+// Handler serverless (Vercel @vercel/node)
+export default function handler(req, res) {
+  return app(req, res);
 }
 
-// Servidor local (desarrollo): levantar listen solo fuera de producción
-if (process.env.NODE_ENV !== 'production') {
-  getApp()
-    .then((app) => {
-      app.listen(PORT, () => {
-        console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
-        console.log(`   http://localhost:${PORT}`);
-      });
-    })
-    .catch((error) => {
-      console.error('❌ Error inicializando la aplicación:', error);
-      process.exit(1);
-    });
+// Servidor local (desarrollo)
+if (!isProduction) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor ejecutándose en puerto ${PORT}`);
+    console.log(`   http://localhost:${PORT}`);
+  });
 }
