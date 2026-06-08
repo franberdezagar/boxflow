@@ -18,7 +18,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 // ---------------------------------------------------------------------------
 // Inicialización perezosa de la base de datos (apta para serverless / pooler).
-// Se ejecuta una sola vez por contenedor "caliente" y se memoiza.
+// Se ejecuta una sola vez por contenedor "caliente" y se memoriza.
 // ---------------------------------------------------------------------------
 let dbReady = null;
 
@@ -117,11 +117,14 @@ app.use('/api', async (req, res, next) => {
   } catch (error) {
     console.error('❌ Error de base de datos:', error);
     res.status(500).json({
-      error: 'No se pudo conectar a la base de datos',
+      // Exponemos el error real para diagnosticar (DB: <causa>)
+      error: `DB: ${error.message}`,
+      name: error.name,
       mensaje: error.message,
     });
   }
 });
+
 
 // Rutas API. Los routers reciben un getter que toma el servicio desde req.
 app.use('/api/turnos', crearRutasTurnos((req) => req.services.turnoService));
