@@ -1,4 +1,5 @@
 import { Sequelize } from 'sequelize';
+import pg from 'pg';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -9,6 +10,10 @@ const isProduction = process.env.NODE_ENV === 'production';
 // pooler de Supabase (Transaction/Session pooler en el puerto 6543).
 const commonOptions = {
   dialect: 'postgres',
+  // Pasar el módulo pg de forma explícita: en serverless (Vercel) la resolución
+  // automática de Sequelize falla con "Please install pg package manually".
+  dialectModule: pg,
+
   logging: isProduction ? false : console.log,
   // En serverless cada invocación es efímera: mantené el pool chico.
   pool: {
