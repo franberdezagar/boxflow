@@ -1,7 +1,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || (() => {
-  // En producción (Vercel), usar rutas relativas
+  // En producción (Vercel), usar el mismo dominio
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return '/api';
+    return `${window.location.origin}/api`;
   }
   // En desarrollo local, usar localhost
   return 'http://localhost:3001/api';
