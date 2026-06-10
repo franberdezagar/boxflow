@@ -75,7 +75,7 @@ export default function Dashboard() {
           turnoActivo.efectivo_final_blanco_esperado
         ),
         efectivo_final_efectivo_declarado: toNumber(
-          turnoActivo.efectivo_final_efectivo_esperado
+          turnoActivo.efectivo_final_efectivo_blanco_esperado + turnoActivo.efectivo_final_efectivo_negro_esperado
         ),
       });
       await refreshTurno();
@@ -159,7 +159,7 @@ export default function Dashboard() {
    const total = Math.abs(posicionNeta) || 1;
    const pctBlanco = posicionNeta !== 0 ? Math.round((Math.abs(totalBlanco) / total) * 100) : 0;
    const pctEfectivoBlanco = posicionNeta !== 0 ? Math.round((Math.abs(totalEfectivoBlanco) / total) * 100) : 0;
-   const pctEfectivoNegro = 100 - pctBlanco - pctEfectivoBlanco;
+   // const pctEfectivoNegro = 100 - pctBlanco - pctEfectivoBlanco;
 
   const shift = SHIFT_LABELS[turnoActivo.nombre_turno] ?? {
     label: turnoActivo.nombre_turno,

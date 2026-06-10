@@ -90,7 +90,7 @@ export default function Shifts() {
           turnoActivo.efectivo_final_blanco_esperado
         ),
         efectivo_final_efectivo_declarado: toNumber(
-          turnoActivo.efectivo_final_efectivo_esperado
+          turnoActivo.efectivo_final_efectivo_blanco_esperado + turnoActivo.efectivo_final_efectivo_negro_esperado
         ),
       });
       await refreshTurno();
@@ -317,7 +317,8 @@ export default function Shifts() {
                   .map((t) => {
                     const bal =
                       toNumber(t.efectivo_final_blanco_esperado) +
-                      toNumber(t.efectivo_final_efectivo_esperado);
+                      toNumber(t.efectivo_final_efectivo_blanco_esperado) +
+                      toNumber(t.efectivo_final_efectivo_negro_esperado);
                     const closed = t.estado === 'CERRADO';
                     const sl = SHIFT_LABELS[t.nombre_turno];
                     return (

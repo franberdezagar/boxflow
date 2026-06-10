@@ -15,7 +15,8 @@ import { formatMoney } from '../lib/format';
 
 const EMPTY: ResumenReporte = {
   blanco: { ingresos: 0, egresos: 0, neto: 0 },
-  efectivo: { ingresos: 0, egresos: 0, neto: 0 },
+  efectivo_blanco: { ingresos: 0, egresos: 0, neto: 0 },
+  efectivo_negro: { ingresos: 0, egresos: 0, neto: 0 },
   total_movimientos: 0,
 };
 
@@ -77,10 +78,10 @@ export default function Reports() {
     load();
   }, [load]);
 
-  const sumNeto = (r: ResumenReporte) => r.blanco.neto + r.efectivo.neto;
+  const sumNeto = (r: ResumenReporte) => r.blanco.neto + r.efectivo_blanco.neto + r.efectivo_negro.neto;
   const sumIngresos = (r: ResumenReporte) =>
-    r.blanco.ingresos + r.efectivo.ingresos;
-  const sumEgresos = (r: ResumenReporte) => r.blanco.egresos + r.efectivo.egresos;
+    r.blanco.ingresos + r.efectivo_blanco.ingresos + r.efectivo_negro.ingresos;
+  const sumEgresos = (r: ResumenReporte) => r.blanco.egresos + r.efectivo_blanco.egresos + r.efectivo_negro.egresos;
 
   const totalBalance = sumNeto(monthly);
 
@@ -163,9 +164,9 @@ export default function Reports() {
             <ReconRow
               title="Efectivo (Blanco)"
               icon={<EyeOff className="w-4 h-4 text-navy-700" />}
-              ingresos={monthly.efectivo.ingresos}
-              egresos={monthly.efectivo.egresos}
-              neto={monthly.efectivo.neto}
+              ingresos={monthly.efectivo_blanco.ingresos}
+              egresos={monthly.efectivo_blanco.egresos}
+              neto={monthly.efectivo_blanco.neto}
             />
           </div>
 
@@ -201,13 +202,23 @@ export default function Reports() {
               icon={<Landmark className="w-4 h-4 text-navy-700" />}
             />
             <BreakdownItem
-              label="Ingreso Efectivo"
-              value={formatMoney(monthly.efectivo.ingresos)}
+              label="Ingreso Efectivo Blanco"
+              value={formatMoney(monthly.efectivo_blanco.ingresos)}
               icon={<EyeOff className="w-4 h-4 text-navy-700" />}
             />
             <BreakdownItem
-              label="Egreso Efectivo"
-              value={formatMoney(monthly.efectivo.egresos)}
+              label="Egreso Efectivo Blanco"
+              value={formatMoney(monthly.efectivo_blanco.egresos)}
+              icon={<EyeOff className="w-4 h-4 text-navy-700" />}
+            />
+            <BreakdownItem
+              label="Ingreso Efectivo Negro"
+              value={formatMoney(monthly.efectivo_negro.ingresos)}
+              icon={<EyeOff className="w-4 h-4 text-navy-700" />}
+            />
+            <BreakdownItem
+              label="Egreso Efectivo Negro"
+              value={formatMoney(monthly.efectivo_negro.egresos)}
               icon={<EyeOff className="w-4 h-4 text-navy-700" />}
             />
           </ul>
