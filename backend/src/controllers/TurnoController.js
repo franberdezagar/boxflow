@@ -13,13 +13,18 @@ export class TurnoController {
         });
       }
 
+      console.log(`[${new Date().toISOString()}] Iniciando apertura de turno: ${nombre_turno}`);
+      
       const nuevoTurno = await this.turnoService.abrirTurno(nombre_turno);
+
+      console.log(`[${new Date().toISOString()}] Turno creado exitosamente: ${nuevoTurno.id}`);
 
       res.status(201).json({
         mensaje: 'Turno abierto correctamente',
         turno: nuevoTurno,
       });
     } catch (error) {
+      console.error(`[${new Date().toISOString()}] Error al abrir turno:`, error);
       res.status(400).json({
         error: error.message,
       });

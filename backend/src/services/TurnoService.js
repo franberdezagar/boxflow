@@ -15,12 +15,17 @@ export class TurnoService {
   }
 
    async abrirTurno(nombre_turno) {
+     console.log(`[TurnoService] Verificando turnos activos...`);
+     
      // Verificar que no haya un turno abierto
      const turnoAbierto = await this.obtenerTurnoActivo();
      if (turnoAbierto) {
+       console.log(`[TurnoService] Ya existe un turno abierto: ${turnoAbierto.id}`);
        throw new Error('Ya existe un turno abierto');
      }
 
+     console.log(`[TurnoService] Creando nuevo turno...`);
+     
      const nuevoTurno = await this.Turno.create({
        nombre_turno,
        efectivo_inicial_blanco: 0,
@@ -30,6 +35,7 @@ export class TurnoService {
        fecha_apertura: new Date(),
      });
 
+     console.log(`[TurnoService] Turno creado con ID: ${nuevoTurno.id}`);
      return nuevoTurno;
    }
 

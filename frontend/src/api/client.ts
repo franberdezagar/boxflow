@@ -48,6 +48,7 @@ export const apiClient = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
+      signal: AbortSignal.timeout(30000), // 30 segundos timeout
     });
     return handle<T>(response);
   },
