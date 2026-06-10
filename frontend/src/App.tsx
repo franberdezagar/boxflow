@@ -5,6 +5,7 @@ import Movements from './pages/Movements';
 import Shifts from './pages/Shifts';
 import Reports from './pages/Reports';
 import Analytics from './pages/Analytics';
+import Categories from './pages/Categories';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="shifts" element={<Shifts />} />
           <Route path="reports" element={<Reports />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="categories" element={<Categories />} />
         </Route>
       </Routes>
     </BrowserRouter>

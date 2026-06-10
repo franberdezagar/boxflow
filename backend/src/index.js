@@ -7,9 +7,13 @@ import { initializeModels } from './models/index.js';
 import { TurnoService } from './services/TurnoService.js';
 import { MovimientoService } from './services/MovimientoService.js';
 import { ReporteService } from './services/ReporteService.js';
+import { ProveedorService } from './services/ProveedorService.js';
+import { EmpleadoService } from './services/EmpleadoService.js';
 import { crearRutasTurnos } from './routes/turnos.js';
 import { crearRutasMovimientos } from './routes/movimientos.js';
 import { crearRutasReportes } from './routes/reportes.js';
+import { createProveedorRoutes } from './routes/proveedores.js';
+import { createEmpleadoRoutes } from './routes/empleados.js';
 
 dotenv.config();
 
@@ -130,6 +134,17 @@ app.use('/api', async (req, res, next) => {
 app.use('/api/turnos', crearRutasTurnos((req) => req.services.turnoService));
 app.use('/api/movimientos', crearRutasMovimientos((req) => req.services.movimientoService));
 app.use('/api/reportes', crearRutasReportes((req) => req.services.reporteService));
+
+// Rutas para proveedores y empleados
+app.use('/api/proveedores', (req, res, next) => {
+  const router = createProveedorRoutes(req.services.models);
+  router(req, res, next);
+});
+
+app.use('/api/empleados', (req, res, next) => {
+  const router = createEmpleadoRoutes(req.services.models);
+  router(req, res, next);
+});
 
 // 404
 app.use((req, res) => {

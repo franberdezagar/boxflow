@@ -38,24 +38,24 @@ export class ReporteService {
     return {
       fecha,
       cantidad_turnos: turnos.length,
-      turnos: turnos.map((t) => ({
-        id: t.id,
-        nombre_turno: t.nombre_turno,
-        fecha_apertura: t.fecha_apertura,
-        fecha_cierre: t.fecha_cierre,
-        saldo_blanco: {
-          inicial: t.efectivo_inicial_blanco,
-          esperado: t.efectivo_final_blanco_esperado,
-          declarado: t.efectivo_final_blanco_declarado,
-          diferencia: t.efectivo_final_blanco_declarado - t.efectivo_final_blanco_esperado,
-        },
-        saldo_negro: {
-          inicial: t.efectivo_inicial_negro,
-          esperado: t.efectivo_final_negro_esperado,
-          declarado: t.efectivo_final_negro_declarado,
-          diferencia: t.efectivo_final_negro_declarado - t.efectivo_final_negro_esperado,
-        },
-      })),
+       turnos: turnos.map((t) => ({
+         id: t.id,
+         nombre_turno: t.nombre_turno,
+         fecha_apertura: t.fecha_apertura,
+         fecha_cierre: t.fecha_cierre,
+         saldo_blanco: {
+           inicial: t.efectivo_inicial_blanco,
+           esperado: t.efectivo_final_blanco_esperado,
+           declarado: t.efectivo_final_blanco_declarado,
+           diferencia: t.efectivo_final_blanco_declarado - t.efectivo_final_blanco_esperado,
+         },
+         saldo_efectivo: {
+           inicial: t.efectivo_inicial_efectivo,
+           esperado: t.efectivo_final_efectivo_esperado,
+           declarado: t.efectivo_final_efectivo_declarado,
+           diferencia: t.efectivo_final_efectivo_declarado - t.efectivo_final_efectivo_esperado,
+         },
+       })),
       resumen,
     };
   }
@@ -131,45 +131,58 @@ export class ReporteService {
     };
   }
 
-  calcularResumenPorDia(turnos) {
-    let totalBlancoIngresos = 0;
-    let totalBlancoEgresos = 0;
-    let totalNegroIngresos = 0;
-    let totalNegroEgresos = 0;
+   calcularResumenPorDia(turnos) {
+     let totalBlancoIngresos = 0;
+     let totalBlancoEgresos = 0;
+     let totalEfectivoBlancoIngresos = 0;
+     let totalEfectivoBlancoEgresos = 0;
+     let totalEfectivoNegroIngresos = 0;
+     let totalEfectivoNegroEgresos = 0;
 
-    turnos.forEach((turno) => {
-      turno.movimientos.forEach((mov) => {
-        const monto = parseFloat(mov.monto);
-        if (mov.condicion_fiscal === ENUM_CONDICION_FISCAL.BLANCO) {
-          if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
-            totalBlancoIngresos += monto;
-          } else {
-            totalBlancoEgresos += monto;
-          }
-        } else if (mov.condicion_fiscal === ENUM_CONDICION_FISCAL.NEGRO) {
-          if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
-            totalNegroIngresos += monto;
-          } else {
-            totalNegroEgresos += monto;
-          }
-        }
-      });
-    });
+     turnos.forEach((turno) => {
+       turno.movimientos.forEach((mov) => {
+         const monto = parseFloat(mov.monto);
+         if (mov.condicion_fiscal === ENUM_CONDICION_FISCAL.BLANCO) {
+           if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
+             totalBlancoIngresos += monto;
+           } else {
+             totalBlancoEgresos += monto;
+           }
+         } else if (mov.condicion_fiscal === ENUM_CONDICION_FISCAL.EFECTIVO_BLANCO) {
+           if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
+             totalEfectivoBlancoIngresos += monto;
+           } else {
+             totalEfectivoBlancoEgresos += monto;
+           }
+         } else if (mov.condicion_fiscal === ENUM_CONDICION_FISCAL.EFECTIVO_NEGRO) {
+           if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
+             totalEfectivoNegroIngresos += monto;
+           } else {
+             totalEfectivoNegroEgresos += monto;
+           }
+         }
+       });
+     });
 
-    return {
-      blanco: {
-        ingresos: totalBlancoIngresos,
-        egresos: totalBlancoEgresos,
-        neto: totalBlancoIngresos - totalBlancoEgresos,
-      },
-      negro: {
-        ingresos: totalNegroIngresos,
-        egresos: totalNegroEgresos,
-        neto: totalNegroIngresos - totalNegroEgresos,
-      },
-      total_movimientos: turnos.reduce((acc, t) => acc + t.movimientos.length, 0),
-    };
-  }
+     return {
+       blanco: {
+         ingresos: totalBlancoIngresos,
+         egresos: totalBlancoEgresos,
+         neto: totalBlancoIngresos - totalBlancoEgresos,
+       },
+       efectivo_blanco: {
+         ingresos: totalEfectivoBlancoIngresos,
+         egresos: totalEfectivoBlancoEgresos,
+         neto: totalEfectivoBlancoIngresos - totalEfectivoBlancoEgresos,
+       },
+       efectivo_negro: {
+         ingresos: totalEfectivoNegroIngresos,
+         egresos: totalEfectivoNegroEgresos,
+         neto: totalEfectivoNegroIngresos - totalEfectivoNegroEgresos,
+       },
+       total_movimientos: turnos.reduce((acc, t) => acc + t.movimientos.length, 0),
+     };
+   }
 
   calcularResumenPorPeriodo(turnos) {
     return this.calcularResumenPorDia(turnos);
@@ -227,7 +240,12 @@ export class ReporteService {
         egresos: 0,
         neto: 0,
       },
-      negro: {
+      efectivo_blanco: {
+        ingresos: 0,
+        egresos: 0,
+        neto: 0,
+      },
+      efectivo_negro: {
         ingresos: 0,
         egresos: 0,
         neto: 0,

@@ -27,32 +27,45 @@ export const defineTurno = (sequelize) => {
         allowNull: false,
         defaultValue: 'ABIERTO',
       },
-      efectivo_inicial_blanco: {
-        type: DataTypes.DECIMAL(12, 2),
-        allowNull: false,
-        defaultValue: 0,
-      },
-      efectivo_inicial_negro: {
-        type: DataTypes.DECIMAL(12, 2),
-        allowNull: false,
-        defaultValue: 0,
-      },
-      efectivo_final_blanco_esperado: {
-        type: DataTypes.DECIMAL(12, 2),
-        allowNull: true,
-      },
-      efectivo_final_negro_esperado: {
-        type: DataTypes.DECIMAL(12, 2),
-        allowNull: true,
-      },
-      efectivo_final_blanco_declarado: {
-        type: DataTypes.DECIMAL(12, 2),
-        allowNull: true,
-      },
-      efectivo_final_negro_declarado: {
-        type: DataTypes.DECIMAL(12, 2),
-        allowNull: true,
-      },
+       efectivo_inicial_blanco: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: false,
+         defaultValue: 0,
+       },
+       efectivo_inicial_efectivo_blanco: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: false,
+         defaultValue: 0,
+       },
+       efectivo_inicial_efectivo_negro: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: false,
+         defaultValue: 0,
+       },
+       efectivo_final_blanco_esperado: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: true,
+       },
+       efectivo_final_efectivo_blanco_esperado: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: true,
+       },
+       efectivo_final_efectivo_negro_esperado: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: true,
+       },
+       efectivo_final_blanco_declarado: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: true,
+       },
+       efectivo_final_efectivo_blanco_declarado: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: true,
+       },
+       efectivo_final_efectivo_negro_declarado: {
+         type: DataTypes.DECIMAL(12, 2),
+         allowNull: true,
+       },
       notas: {
         type: DataTypes.TEXT,
         allowNull: true,

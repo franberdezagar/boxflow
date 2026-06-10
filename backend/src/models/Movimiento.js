@@ -21,10 +21,10 @@ export const defineMovimiento = (sequelize) => {
         type: DataTypes.ENUM('VENTA', 'PROVEEDOR', 'SUELDO', 'VARIOS'),
         allowNull: false,
       },
-      condicion_fiscal: {
-        type: DataTypes.ENUM('BLANCO', 'NEGRO'),
-        allowNull: false,
-      },
+       condicion_fiscal: {
+         type: DataTypes.ENUM('BLANCO', 'EFECTIVO_BLANCO', 'EFECTIVO_NEGRO'),
+         allowNull: false,
+       },
       monto: {
         type: DataTypes.DECIMAL(12, 2),
         allowNull: false,

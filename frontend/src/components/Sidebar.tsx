@@ -6,6 +6,7 @@ import {
   Clock,
   BarChart3,
   FileText,
+  Users,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -16,6 +17,7 @@ const navItems = [
   { to: '/', label: 'Panel de Control', icon: LayoutDashboard, end: true },
   { to: '/movements', label: 'Movimientos', icon: ArrowRightLeft },
   { to: '/shifts', label: 'Turnos', icon: Clock },
+  { to: '/categories', label: 'Categorías', icon: Users },
   { to: '/reports', label: 'Reportes', icon: FileText },
   { to: '/analytics', label: 'Análisis', icon: BarChart3 },
 ];

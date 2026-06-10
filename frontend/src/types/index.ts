@@ -23,7 +23,8 @@ export const Categoria = {
 
 export const CondicionFiscal = {
   BLANCO: 'BLANCO',
-  NEGRO: 'NEGRO',
+  EFECTIVO_REGISTRADO: 'EFECTIVO_BLANCO',
+  EFECTIVO_NO_REGISTRADO: 'EFECTIVO_NEGRO',
 } as const;
 
 // Interfaces
@@ -34,11 +35,14 @@ export interface Turno {
   fecha_cierre: string | null;
   estado: typeof EstadoTurno[keyof typeof EstadoTurno];
   efectivo_inicial_blanco: number;
-  efectivo_inicial_negro: number;
+  efectivo_inicial_efectivo_blanco: number;
+  efectivo_inicial_efectivo_negro: number;
   efectivo_final_blanco_esperado: number;
   efectivo_final_blanco_declarado: number | null;
-  efectivo_final_negro_esperado: number;
-  efectivo_final_negro_declarado: number | null;
+  efectivo_final_efectivo_blanco_esperado: number;
+  efectivo_final_efectivo_blanco_declarado: number | null;
+  efectivo_final_efectivo_negro_esperado: number;
+  efectivo_final_efectivo_negro_declarado: number | null;
   notas?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -69,7 +73,8 @@ export interface ResumenCondicion {
 
 export interface ResumenReporte {
   blanco: ResumenCondicion;
-  negro: ResumenCondicion;
+  efectivo_blanco: ResumenCondicion;
+  efectivo_negro: ResumenCondicion;
   total_movimientos: number;
 }
 

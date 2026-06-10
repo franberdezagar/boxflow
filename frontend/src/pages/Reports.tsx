@@ -15,7 +15,7 @@ import { formatMoney } from '../lib/format';
 
 const EMPTY: ResumenReporte = {
   blanco: { ingresos: 0, egresos: 0, neto: 0 },
-  negro: { ingresos: 0, egresos: 0, neto: 0 },
+  efectivo: { ingresos: 0, egresos: 0, neto: 0 },
   total_movimientos: 0,
 };
 
@@ -77,10 +77,10 @@ export default function Reports() {
     load();
   }, [load]);
 
-  const sumNeto = (r: ResumenReporte) => r.blanco.neto + r.negro.neto;
+  const sumNeto = (r: ResumenReporte) => r.blanco.neto + r.efectivo.neto;
   const sumIngresos = (r: ResumenReporte) =>
-    r.blanco.ingresos + r.negro.ingresos;
-  const sumEgresos = (r: ResumenReporte) => r.blanco.egresos + r.negro.egresos;
+    r.blanco.ingresos + r.efectivo.ingresos;
+  const sumEgresos = (r: ResumenReporte) => r.blanco.egresos + r.efectivo.egresos;
 
   const totalBalance = sumNeto(monthly);
 
@@ -161,11 +161,11 @@ export default function Reports() {
               neto={monthly.blanco.neto}
             />
             <ReconRow
-              title="Negro (Cash)"
+              title="Efectivo (Blanco)"
               icon={<EyeOff className="w-4 h-4 text-navy-700" />}
-              ingresos={monthly.negro.ingresos}
-              egresos={monthly.negro.egresos}
-              neto={monthly.negro.neto}
+              ingresos={monthly.efectivo.ingresos}
+              egresos={monthly.efectivo.egresos}
+              neto={monthly.efectivo.neto}
             />
           </div>
 
@@ -201,13 +201,13 @@ export default function Reports() {
               icon={<Landmark className="w-4 h-4 text-navy-700" />}
             />
             <BreakdownItem
-              label="Ingreso Negro"
-              value={formatMoney(monthly.negro.ingresos)}
+              label="Ingreso Efectivo"
+              value={formatMoney(monthly.efectivo.ingresos)}
               icon={<EyeOff className="w-4 h-4 text-navy-700" />}
             />
             <BreakdownItem
-              label="Egreso Negro"
-              value={formatMoney(monthly.negro.egresos)}
+              label="Egreso Efectivo"
+              value={formatMoney(monthly.efectivo.egresos)}
               icon={<EyeOff className="w-4 h-4 text-navy-700" />}
             />
           </ul>

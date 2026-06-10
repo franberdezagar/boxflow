@@ -29,7 +29,7 @@ interface Flow {
   out: number;
 }
 
-function computeFlow(movs: Movimiento[], cond: 'BLANCO' | 'NEGRO'): Flow {
+function computeFlow(movs: Movimiento[], cond: 'BLANCO' | 'EFECTIVO'): Flow {
   return movs
     .filter((m) => m.condicion_fiscal === cond)
     .reduce(
@@ -51,7 +51,7 @@ export default function Shifts() {
   const [history, setHistory] = useState<Turno[]>([]);
   const [busy, setBusy] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filterStream, setFilterStream] = useState<'all' | 'blanco' | 'negro'>('all');
+   const [filterStream, setFilterStream] = useState<'all' | 'blanco' | 'efectivo'>('all');
   const [filterShift, setFilterShift] = useState<'all' | 'MAÑANA' | 'TARDE'>('all');
 
   const loadData = useCallback(async () => {
@@ -89,8 +89,8 @@ export default function Shifts() {
         efectivo_final_blanco_declarado: toNumber(
           turnoActivo.efectivo_final_blanco_esperado
         ),
-        efectivo_final_negro_declarado: toNumber(
-          turnoActivo.efectivo_final_negro_esperado
+        efectivo_final_efectivo_declarado: toNumber(
+          turnoActivo.efectivo_final_efectivo_esperado
         ),
       });
       await refreshTurno();
@@ -110,10 +110,10 @@ export default function Shifts() {
     );
   }
 
-  const blanco = computeFlow(movs, 'BLANCO');
-  const negro = computeFlow(movs, 'NEGRO');
-  const blancoBal = blanco.in - blanco.out;
-  const negroBal = negro.in - negro.out;
+   const blanco = computeFlow(movs, 'BLANCO');
+   const efectivo = computeFlow(movs, 'EFECTIVO');
+   const blancoBal = blanco.in - blanco.out;
+   const efectivoBal = efectivo.in - efectivo.out;
 
   const shift = turnoActivo
     ? SHIFT_LABELS[turnoActivo.nombre_turno] ?? {
@@ -157,12 +157,12 @@ export default function Shifts() {
                   {formatMoney(blancoBal)}
                 </p>
               </div>
-              <div>
-                <p className="text-white/50 text-xs mb-0.5">Net Negro</p>
-                <p className="font-semibold font-ledger">
-                  {formatMoney(negroBal)}
-                </p>
-              </div>
+               <div>
+                 <p className="text-white/50 text-xs mb-0.5">Net Efectivo</p>
+                 <p className="font-semibold font-ledger">
+                   {formatMoney(efectivoBal)}
+                 </p>
+               </div>
             </div>
             <button
               onClick={handleClose}
@@ -218,11 +218,11 @@ export default function Shifts() {
           </div>
         </div>
 
-        {/* Negro flow */}
+        {/* Efectivo flow */}
         <div className="bg-navy-950 text-white rounded-2xl shadow-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
             <span className="text-xs font-bold uppercase tracking-wide text-white/60">
-              Cash / Negro Flow
+              Cash / Efectivo Flow
             </span>
             <Wallet className="w-4 h-4 text-white/60" />
           </div>
@@ -230,19 +230,19 @@ export default function Shifts() {
             <div>
               <p className="text-xs text-white/50 mb-1">Total In</p>
               <p className="font-bold text-mint-400 font-ledger">
-                {formatMoney(negro.in)}
+                {formatMoney(efectivo.in)}
               </p>
             </div>
             <div>
               <p className="text-xs text-white/50 mb-1">Total Out</p>
               <p className="font-bold text-red-300 font-ledger">
-                {formatMoney(negro.out)}
+                {formatMoney(efectivo.out)}
               </p>
             </div>
             <div className="pl-2 border-l border-white/15">
               <p className="text-xs text-white/50 mb-1">Balance</p>
               <p className="font-bold text-white font-ledger">
-                {formatMoney(negroBal)}
+                {formatMoney(efectivoBal)}
               </p>
             </div>
           </div>
@@ -269,12 +269,12 @@ export default function Shifts() {
                   </label>
                   <select
                     value={filterStream}
-                    onChange={(e) => setFilterStream(e.target.value as 'all' | 'blanco' | 'negro')}
+                    onChange={(e) => setFilterStream(e.target.value as 'all' | 'blanco' | 'efectivo')}
                     className="w-full px-2 py-1 text-sm border border-slate-300 rounded bg-white"
                   >
                     <option value="all">Todos</option>
                     <option value="blanco">Blanco</option>
-                    <option value="negro">Negro</option>
+                    <option value="efectivo">Efectivo</option>
                   </select>
                 </div>
                 <div>
@@ -317,7 +317,7 @@ export default function Shifts() {
                   .map((t) => {
                     const bal =
                       toNumber(t.efectivo_final_blanco_esperado) +
-                      toNumber(t.efectivo_final_negro_esperado);
+                      toNumber(t.efectivo_final_efectivo_esperado);
                     const closed = t.estado === 'CERRADO';
                     const sl = SHIFT_LABELS[t.nombre_turno];
                     return (

@@ -14,7 +14,7 @@ import type { AppOutletContext } from '../components/Layout';
 import { movimientosAPI } from '../api/movimientos';
 
 type TxType = 'expense' | 'income';
-type Stream = 'blanco' | 'negro';
+type Stream = 'blanco' | 'efectivo_registrado' | 'efectivo_no_registrado';
 
 const CATEGORIES = [
   { value: 'VENTA', label: 'Ventas Diarias' },
@@ -58,13 +58,19 @@ export default function Movements() {
     try {
       setLoading(true);
       setError(null);
-      await movimientosAPI.crearMovimiento({
-        tipo_movimiento: type === 'income' ? 'INGRESO' : 'EGRESO',
-        condicion_fiscal: stream === 'blanco' ? 'BLANCO' : 'NEGRO',
-        categoria: category,
-        monto: numericAmount,
-        descripcion: concept || category,
-      });
+       const getCondicionFiscal = () => {
+         if (stream === 'blanco') return 'BLANCO';
+         if (stream === 'efectivo_registrado') return 'EFECTIVO_BLANCO';
+         return 'EFECTIVO_NEGRO';
+       };
+
+       await movimientosAPI.crearMovimiento({
+         tipo_movimiento: type === 'income' ? 'INGRESO' : 'EGRESO',
+         condicion_fiscal: getCondicionFiscal(),
+         categoria: category,
+         monto: numericAmount,
+         descripcion: concept || category,
+       });
       setAmount('0');
       setCategory('');
       setConcept('');
@@ -163,33 +169,47 @@ export default function Movements() {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-ink-muted mb-2">
               Flujo Contable
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => setStream('blanco')}
-                className={`flex flex-col items-center justify-center gap-1 py-4 rounded-xl border-2 transition-all ${
+                className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl border-2 transition-all ${
                   stream === 'blanco'
                     ? 'border-navy-950 bg-blue-50'
                     : 'border-transparent bg-slate-100 hover:bg-slate-200'
                 }`}
               >
-                <Landmark className="w-6 h-6 text-navy-800" />
-                <span className="text-sm font-semibold text-navy-900">Blanco</span>
-                <span className="text-[10px] text-ink-muted uppercase tracking-wide">
-                  Fiscal / Oficial
+                <Landmark className="w-5 h-5 text-navy-800" />
+                <span className="text-xs font-semibold text-navy-900">Blanco</span>
+                <span className="text-[9px] text-ink-muted uppercase tracking-wide">
+                  Fiscal
                 </span>
               </button>
               <button
-                onClick={() => setStream('negro')}
-                className={`flex flex-col items-center justify-center gap-1 py-4 rounded-xl border-2 transition-all ${
-                  stream === 'negro'
+                onClick={() => setStream('efectivo_registrado')}
+                className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl border-2 transition-all ${
+                  stream === 'efectivo_registrado'
                     ? 'border-navy-950 bg-blue-50'
                     : 'border-transparent bg-slate-100 hover:bg-slate-200'
                 }`}
               >
-                <EyeOff className="w-6 h-6 text-navy-800" />
-                <span className="text-sm font-semibold text-navy-900">Negro</span>
-                <span className="text-[10px] text-ink-muted uppercase tracking-wide">
-                  Interno / Efectivo
+                <Plus className="w-5 h-5 text-navy-800" />
+                <span className="text-xs font-semibold text-navy-900">Efectivo</span>
+                <span className="text-[9px] text-ink-muted uppercase tracking-wide">
+                  Registrado
+                </span>
+              </button>
+              <button
+                onClick={() => setStream('efectivo_no_registrado')}
+                className={`flex flex-col items-center justify-center gap-1 py-3 rounded-xl border-2 transition-all ${
+                  stream === 'efectivo_no_registrado'
+                    ? 'border-navy-950 bg-blue-50'
+                    : 'border-transparent bg-slate-100 hover:bg-slate-200'
+                }`}
+              >
+                <EyeOff className="w-5 h-5 text-navy-800" />
+                <span className="text-xs font-semibold text-navy-900">Efectivo</span>
+                <span className="text-[9px] text-ink-muted uppercase tracking-wide">
+                  No Registrado
                 </span>
               </button>
             </div>

@@ -74,8 +74,8 @@ export default function Dashboard() {
         efectivo_final_blanco_declarado: toNumber(
           turnoActivo.efectivo_final_blanco_esperado
         ),
-        efectivo_final_negro_declarado: toNumber(
-          turnoActivo.efectivo_final_negro_esperado
+        efectivo_final_efectivo_declarado: toNumber(
+          turnoActivo.efectivo_final_efectivo_esperado
         ),
       });
       await refreshTurno();
@@ -133,25 +133,33 @@ export default function Dashboard() {
   }
 
   // ---- Computed totals from movements ----
-  const blancoIngresos = movimientos
-    .filter((m) => m.condicion_fiscal === 'BLANCO' && m.tipo_movimiento === 'INGRESO')
-    .reduce((sum, m) => sum + toNumber(m.monto), 0);
-  const blancoEgresos = movimientos
-    .filter((m) => m.condicion_fiscal === 'BLANCO' && m.tipo_movimiento === 'EGRESO')
-    .reduce((sum, m) => sum + toNumber(m.monto), 0);
-  const negroIngresos = movimientos
-    .filter((m) => m.condicion_fiscal === 'NEGRO' && m.tipo_movimiento === 'INGRESO')
-    .reduce((sum, m) => sum + toNumber(m.monto), 0);
-  const negroEgresos = movimientos
-    .filter((m) => m.condicion_fiscal === 'NEGRO' && m.tipo_movimiento === 'EGRESO')
-    .reduce((sum, m) => sum + toNumber(m.monto), 0);
+   const blancoIngresos = movimientos
+     .filter((m) => m.condicion_fiscal === 'BLANCO' && m.tipo_movimiento === 'INGRESO')
+     .reduce((sum, m) => sum + toNumber(m.monto), 0);
+   const blancoEgresos = movimientos
+     .filter((m) => m.condicion_fiscal === 'BLANCO' && m.tipo_movimiento === 'EGRESO')
+     .reduce((sum, m) => sum + toNumber(m.monto), 0);
+    const efectivoBlancoIngresos = movimientos
+     .filter((m) => m.condicion_fiscal === 'EFECTIVO_BLANCO' && m.tipo_movimiento === 'INGRESO')
+     .reduce((sum, m) => sum + toNumber(m.monto), 0);
+   const efectivoBlancoEgresos = movimientos
+     .filter((m) => m.condicion_fiscal === 'EFECTIVO_BLANCO' && m.tipo_movimiento === 'EGRESO')
+     .reduce((sum, m) => sum + toNumber(m.monto), 0);
+   const efectivoNegroIngresos = movimientos
+     .filter((m) => m.condicion_fiscal === 'EFECTIVO_NEGRO' && m.tipo_movimiento === 'INGRESO')
+     .reduce((sum, m) => sum + toNumber(m.monto), 0);
+   const efectivoNegroEgresos = movimientos
+     .filter((m) => m.condicion_fiscal === 'EFECTIVO_NEGRO' && m.tipo_movimiento === 'EGRESO')
+     .reduce((sum, m) => sum + toNumber(m.monto), 0);
 
-  const totalBlanco = blancoIngresos - blancoEgresos;
-  const totalNegro = negroIngresos - negroEgresos;
-  const posicionNeta = totalBlanco + totalNegro;
-  const total = Math.abs(posicionNeta) || 1;
-  const pctBlanco = posicionNeta !== 0 ? Math.round((Math.abs(totalBlanco) / total) * 100) : 0;
-  const pctNegro = 100 - pctBlanco;
+   const totalBlanco = blancoIngresos - blancoEgresos;
+   const totalEfectivoBlanco = efectivoBlancoIngresos - efectivoBlancoEgresos;
+   const totalEfectivoNegro = efectivoNegroIngresos - efectivoNegroEgresos;
+   const posicionNeta = totalBlanco + totalEfectivoBlanco + totalEfectivoNegro;
+   const total = Math.abs(posicionNeta) || 1;
+   const pctBlanco = posicionNeta !== 0 ? Math.round((Math.abs(totalBlanco) / total) * 100) : 0;
+   const pctEfectivoBlanco = posicionNeta !== 0 ? Math.round((Math.abs(totalEfectivoBlanco) / total) * 100) : 0;
+   const pctEfectivoNegro = 100 - pctBlanco - pctEfectivoBlanco;
 
   const shift = SHIFT_LABELS[turnoActivo.nombre_turno] ?? {
     label: turnoActivo.nombre_turno,
@@ -160,9 +168,9 @@ export default function Dashboard() {
 
   const quickActions = [
     { label: 'Ingreso (Blanco)', icon: Plus, tone: 'mint', stream: 'blanco', type: 'income' },
-    { label: 'Ingreso (Negro)', icon: Plus, tone: 'slate', stream: 'negro', type: 'income' },
+    { label: 'Ingreso (Efectivo)', icon: Plus, tone: 'slate', stream: 'efectivo', type: 'income' },
     { label: 'Egreso (Blanco)', icon: Minus, tone: 'red', stream: 'blanco', type: 'expense' },
-    { label: 'Egreso (Negro)', icon: Minus, tone: 'red', stream: 'negro', type: 'expense' },
+    { label: 'Egreso (Efectivo)', icon: Minus, tone: 'red', stream: 'efectivo', type: 'expense' },
   ] as const;
 
   const toneClasses: Record<string, string> = {
@@ -220,29 +228,29 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Negro */}
+        {/* Efectivo */}
         <div className="bg-surface rounded-2xl border-2 border-navy-950 shadow-sm p-5">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2 text-ink-muted">
               <Landmark className="w-4 h-4 text-navy-700" />
               <span className="text-xs font-semibold uppercase tracking-wide">
-                Negro (Non-Fiscal)
+                Efectivo (Blanco)
               </span>
             </div>
             <Landmark className="w-7 h-7 text-slate-200" />
           </div>
           <p className="text-3xl font-extrabold text-navy-950 mt-3 mb-4 font-ledger">
-            {formatMoney(totalNegro)}
+            {formatMoney(totalEfectivoBlanco)}
           </p>
           <div className="flex items-center gap-3">
             <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-navy-800 rounded-full"
-                style={{ width: `${pctNegro}%` }}
+                style={{ width: `${pctEfectivoBlanco}%` }}
               />
             </div>
             <span className="text-xs text-ink-muted whitespace-nowrap">
-              {pctNegro}% of total
+              {pctEfectivoBlanco}% of total
             </span>
           </div>
         </div>

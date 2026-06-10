@@ -1,12 +1,12 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ArrowRightLeft, Clock, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, ArrowRightLeft, Clock, BarChart3, Users } from 'lucide-react';
 
 const items = [
   { to: '/', label: 'Panel', icon: LayoutDashboard, end: true },
   { to: '/movements', label: 'Movimientos', icon: ArrowRightLeft },
   { to: '/shifts', label: 'Turnos', icon: Clock },
+  { to: '/categories', label: 'Categorías', icon: Users },
   { to: '/reports', label: 'Reportes', icon: BarChart3 },
-  { to: '/analytics', label: 'Análisis', icon: BarChart3 },
 ];
 
 export default function BottomNav() {

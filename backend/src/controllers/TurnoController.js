@@ -26,33 +26,33 @@ export class TurnoController {
     }
   }
 
-  async cerrarTurno(req, res) {
-    try {
-      const { turno_id, efectivo_final_blanco_declarado, efectivo_final_negro_declarado, notas } = req.body;
+   async cerrarTurno(req, res) {
+     try {
+       const { turno_id, efectivo_final_blanco_declarado, efectivo_final_efectivo_declarado, notas } = req.body;
 
-      if (!turno_id || efectivo_final_blanco_declarado === undefined || efectivo_final_negro_declarado === undefined) {
-        return res.status(400).json({
-          error: 'Faltan campos requeridos',
-        });
-      }
+       if (!turno_id || efectivo_final_blanco_declarado === undefined || efectivo_final_efectivo_declarado === undefined) {
+         return res.status(400).json({
+           error: 'Faltan campos requeridos',
+         });
+       }
 
-      const turnoCerrado = await this.turnoService.cerrarTurno(
-        turno_id,
-        efectivo_final_blanco_declarado,
-        efectivo_final_negro_declarado,
-        notas
-      );
+       const turnoCerrado = await this.turnoService.cerrarTurno(
+         turno_id,
+         efectivo_final_blanco_declarado,
+         efectivo_final_efectivo_declarado,
+         notas
+       );
 
-      res.status(200).json({
-        mensaje: 'Turno cerrado correctamente',
-        turno: turnoCerrado,
-      });
-    } catch (error) {
-      res.status(400).json({
-        error: error.message,
-      });
-    }
-  }
+       res.status(200).json({
+         mensaje: 'Turno cerrado correctamente',
+         turno: turnoCerrado,
+       });
+     } catch (error) {
+       res.status(400).json({
+         error: error.message,
+       });
+     }
+   }
 
   async obtenerTurnoActivo(req, res) {
     try {

@@ -14,100 +14,122 @@ export class TurnoService {
     });
   }
 
-  async abrirTurno(nombre_turno) {
-    // Verificar que no haya un turno abierto
-    const turnoAbierto = await this.obtenerTurnoActivo();
-    if (turnoAbierto) {
-      throw new Error('Ya existe un turno abierto');
-    }
+   async abrirTurno(nombre_turno) {
+     // Verificar que no haya un turno abierto
+     const turnoAbierto = await this.obtenerTurnoActivo();
+     if (turnoAbierto) {
+       throw new Error('Ya existe un turno abierto');
+     }
 
-    const nuevoTurno = await this.Turno.create({
-      nombre_turno,
-      efectivo_inicial_blanco: 0,
-      efectivo_inicial_negro: 0,
-      estado: ENUM_ESTADO_TURNO.ABIERTO,
-      fecha_apertura: new Date(),
-    });
+     const nuevoTurno = await this.Turno.create({
+       nombre_turno,
+       efectivo_inicial_blanco: 0,
+       efectivo_inicial_efectivo_blanco: 0,
+       efectivo_inicial_efectivo_negro: 0,
+       estado: ENUM_ESTADO_TURNO.ABIERTO,
+       fecha_apertura: new Date(),
+     });
 
-    return nuevoTurno;
-  }
+     return nuevoTurno;
+   }
 
-  async cerrarTurno(turno_id, efectivo_final_blanco_declarado, efectivo_final_negro_declarado, notas) {
-    const turno = await this.Turno.findByPk(turno_id);
+   async cerrarTurno(turno_id, efectivo_final_blanco_declarado, efectivo_final_efectivo_blanco_declarado, efectivo_final_efectivo_negro_declarado, notas) {
+     const turno = await this.Turno.findByPk(turno_id);
 
-    if (!turno) {
-      throw new Error('Turno no encontrado');
-    }
+     if (!turno) {
+       throw new Error('Turno no encontrado');
+     }
 
-    if (turno.estado === ENUM_ESTADO_TURNO.CERRADO) {
-      throw new Error('El turno ya está cerrado');
-    }
+     if (turno.estado === ENUM_ESTADO_TURNO.CERRADO) {
+       throw new Error('El turno ya está cerrado');
+     }
 
-    // Calcular saldos esperados
-    const { blanco_esperado, negro_esperado } = await this.calcularSaldosEsperados(turno_id);
+     // Calcular saldos esperados
+     const { blanco_esperado, efectivo_blanco_esperado, efectivo_negro_esperado } = await this.calcularSaldosEsperados(turno_id);
 
-    // Actualizar turno
-    turno.fecha_cierre = new Date();
-    turno.estado = ENUM_ESTADO_TURNO.CERRADO;
-    turno.efectivo_final_blanco_esperado = blanco_esperado;
-    turno.efectivo_final_negro_esperado = negro_esperado;
-    turno.efectivo_final_blanco_declarado = efectivo_final_blanco_declarado;
-    turno.efectivo_final_negro_declarado = efectivo_final_negro_declarado;
-    turno.notas = notas;
+     // Actualizar turno
+     turno.fecha_cierre = new Date();
+     turno.estado = ENUM_ESTADO_TURNO.CERRADO;
+     turno.efectivo_final_blanco_esperado = blanco_esperado;
+     turno.efectivo_final_efectivo_blanco_esperado = efectivo_blanco_esperado;
+     turno.efectivo_final_efectivo_negro_esperado = efectivo_negro_esperado;
+     turno.efectivo_final_blanco_declarado = efectivo_final_blanco_declarado;
+     turno.efectivo_final_efectivo_blanco_declarado = efectivo_final_efectivo_blanco_declarado;
+     turno.efectivo_final_efectivo_negro_declarado = efectivo_final_efectivo_negro_declarado;
+     turno.notas = notas;
 
-    await turno.save();
+     await turno.save();
 
-    return turno;
-  }
+     return turno;
+   }
 
-  async calcularSaldosEsperados(turno_id) {
-    const turno = await this.Turno.findByPk(turno_id);
+   async calcularSaldosEsperados(turno_id) {
+     const turno = await this.Turno.findByPk(turno_id);
 
-    if (!turno) {
-      throw new Error('Turno no encontrado');
-    }
+     if (!turno) {
+       throw new Error('Turno no encontrado');
+     }
 
-    // Calcular para BLANCO
-    const movimientosBlanco = await this.Movimiento.findAll({
-      where: {
-        turno_id,
-        condicion_fiscal: ENUM_CONDICION_FISCAL.BLANCO,
-      },
-    });
+     // Calcular para BLANCO
+     const movimientosBlanco = await this.Movimiento.findAll({
+       where: {
+         turno_id,
+         condicion_fiscal: ENUM_CONDICION_FISCAL.BLANCO,
+       },
+     });
 
-    let saldoBlanco = parseFloat(turno.efectivo_inicial_blanco);
-    movimientosBlanco.forEach((mov) => {
-      const monto = parseFloat(mov.monto);
-      if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
-        saldoBlanco += monto;
-      } else {
-        saldoBlanco -= monto;
-      }
-    });
+     let saldoBlanco = parseFloat(turno.efectivo_inicial_blanco);
+     movimientosBlanco.forEach((mov) => {
+       const monto = parseFloat(mov.monto);
+       if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
+         saldoBlanco += monto;
+       } else {
+         saldoBlanco -= monto;
+       }
+     });
 
-    // Calcular para NEGRO
-    const movimientosNegro = await this.Movimiento.findAll({
-      where: {
-        turno_id,
-        condicion_fiscal: ENUM_CONDICION_FISCAL.NEGRO,
-      },
-    });
+     // Calcular para EFECTIVO_BLANCO
+     const movimientosEfectivoBlanco = await this.Movimiento.findAll({
+       where: {
+         turno_id,
+         condicion_fiscal: ENUM_CONDICION_FISCAL.EFECTIVO_BLANCO,
+       },
+     });
 
-    let saldoNegro = parseFloat(turno.efectivo_inicial_negro);
-    movimientosNegro.forEach((mov) => {
-      const monto = parseFloat(mov.monto);
-      if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
-        saldoNegro += monto;
-      } else {
-        saldoNegro -= monto;
-      }
-    });
+     let saldoEfectivoBlanco = parseFloat(turno.efectivo_inicial_efectivo_blanco);
+     movimientosEfectivoBlanco.forEach((mov) => {
+       const monto = parseFloat(mov.monto);
+       if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
+         saldoEfectivoBlanco += monto;
+       } else {
+         saldoEfectivoBlanco -= monto;
+       }
+     });
 
-    return {
-      blanco_esperado: saldoBlanco,
-      negro_esperado: saldoNegro,
-    };
-  }
+     // Calcular para EFECTIVO_NEGRO
+     const movimientosEfectivoNegro = await this.Movimiento.findAll({
+       where: {
+         turno_id,
+         condicion_fiscal: ENUM_CONDICION_FISCAL.EFECTIVO_NEGRO,
+       },
+     });
+
+     let saldoEfectivoNegro = parseFloat(turno.efectivo_inicial_efectivo_negro);
+     movimientosEfectivoNegro.forEach((mov) => {
+       const monto = parseFloat(mov.monto);
+       if (mov.tipo_movimiento === ENUM_TIPO_MOVIMIENTO.INGRESO) {
+         saldoEfectivoNegro += monto;
+       } else {
+         saldoEfectivoNegro -= monto;
+       }
+     });
+
+     return {
+       blanco_esperado: saldoBlanco,
+       efectivo_blanco_esperado: saldoEfectivoBlanco,
+       efectivo_negro_esperado: saldoEfectivoNegro,
+     };
+   }
 
   async obtenerTurnoPorId(turno_id) {
     return this.Turno.findByPk(turno_id, {
